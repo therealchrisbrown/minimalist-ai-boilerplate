@@ -1,5 +1,5 @@
+from typing import Any, Type, List, Dict
 import instructor
-from typing import Any
 from config.settings import get_settings
 from openai import OpenAI
 from pydantic import BaseModel, Field
@@ -13,15 +13,15 @@ class LLMClient:
     def _initialize_client(self) -> Any:
         client_initializers = {
             "llama": lambda s: instructor.from_openai(
-                OpenAI(
-                    base_url=s.base_url,
-                    api_key=s.api_key
-                ),
-                mode=instructor.Mode.JSON
-            )
+                OpenAI(base_url=s.base_url, api_key=s.api_key), mode=instructor.Mode.JSON)
         }
 
         initializer = client_initializers.get(self.provider)
         if initializer:
             return initializer(self.settings)
         raise ValueError("Unsupported provider: {self.provider}")
+    
+    def create_completion(self, response_model: Type[BaseModel], messages: List[Dict[str, str]], **kwargs)-> Any:
+        completion_params = {
+            "model": kwargs.pop)
+        }
