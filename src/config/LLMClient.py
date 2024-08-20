@@ -23,5 +23,16 @@ class LLMClient:
     
     def create_completion(self, response_model: Type[BaseModel], messages: List[Dict[str, str]], **kwargs)-> Any:
         completion_params = {
-            "model": kwargs.pop)
+            "model": kwargs.get("model", self.settings.default_model),
+            "temperature": kwargs.get("temperature", self.settings.temperature),
+            "max_retries": kwargs.get("max_retries", self.settings.max_retries),
+            "max_tokens": kwargs.get("max_tokens", self.settings.max_tokens),
+            "response_model": response_model,
+            "messages": messages
         }
+        return self.client.chat.completions.create(**completion_params)
+    
+if __name__ == "__main__":
+
+    class CompletionModel(BaseModel):
+        reasoning: str = Field(description="Reasoning")
