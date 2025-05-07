@@ -1,53 +1,55 @@
 import google.generativeai as genai
-import os
 
-class LLMClient:
-    def __init__(self, model_name="gemini-1.5-pro-latest", api_key: str = None, system_instruction: str = None):
-        """
-        Initializes the LLM client using the Google Generative AI SDK.
+def generate_gemini_response(
+    prompt: str,
+    api_key: str,
+    model_name: str = "gemini-1.5-pro-latest",
+    system_message: str = None,
+    temperature: float = None,
+    max_output_tokens: int = None,
+) -> str:
+    """
+    Sends a prompt to the Gemini LLM and gets a simple text response.
+    This function configures the API key, creates the model, and generates content.
 
-        Args:
-            model_name (str): The name of the Google Gemini model to use.
-            api_key (str, optional): Your Google API key. If None, uses GOOGLE_API_KEY env var.
-            system_instruction (str, optional): Default system instruction for the model.
-        """
-        self.model_name = model_name
-        
-        resolved_api_key = api_key or os.getenv("GOOGLE_API_KEY")
-        if not resolved_api_key:
-            raise ValueError("Google API key must be provided or set as GOOGLE_API_KEY environment variable.")
-        genai.configure(api_key=resolved_api_key)
+    Args:
+        prompt (str): The user's prompt.
+        api_key (str): Your Google API key. Must be provided.
+        model_name (str): The name of the Google Gemini model to use.
+        system_message (str, optional): System instruction for the model.
+        temperature (float, optional): Controls randomness (0.0-1.0).
+        max_output_tokens (int, optional): Maximum number of tokens to generate.
 
-        try:
-            self.model = genai.GenerativeModel(
-                self.model_name,
-                system_instruction=system_instruction
-            )
-        except Exception as e:
-            print(f"Error initializing GenerativeModel '{self.model_name}': {e}")
-            print("Please ensure API key is valid, model name correct, and system_instruction (if any) is valid.")
-            raise
+    Returns:
+        str: The generated text content from the LLM.
+             Returns an empty string if the model generates no text (e.g. due to safety filters).
 
-    def chat(self, prompt: str, stream: bool = False, history: list = None):
-        """
-        Sends a prompt to the Gemini LLM and gets a response, potentially using chat history.
+    Raises:
+        ValueError: If api_key is not provided.
+        google.api_core.exceptions.GoogleAPIError: For API-related errors during generation.
+        Other exceptions from the google.generativeai library may also propagate.
+    """
+    if not api_key:
+        raise ValueError("A Google API key must be provided to 'generate_gemini_response'.")
 
-        Args:
-            prompt (str): The user's prompt.
-            stream (bool): Whether to stream the response.
-            history (list, optional): A list of previous messages for the chat session,
-                                      formatted as {'role': 'user/model', 'parts': [{'text': '...'}]}.
-                                      If None, a new chat session is started.
+    genai.configure(api_key=api_key)
 
-        Returns:
-            If stream is False: google.generativeai.types.GenerateContentResponse
-            If stream is True: generator yielding google.generativeai.types.GenerateContentResponse chunks.
-        """
-        try:
-            chat_session = self.model.start_chat(history=history or [])
-            response = chat_session.send_message(prompt, stream=stream)
-            return response
-        except Exception as e:
-            print(f"Error communicating with Google Gemini API (model: '{self.model_name}'): {e}")
-            # Return a consistent error structure or re-raise based on desired error handling
-            return {"error": str(e), "status_code": getattr(e, 'code', None) or getattr(e, 'status_code', 'Unknown')}
+    model_instance = genai.GenerativeModel(
+        model_name=model_name,
+        system_instruction=system_message
+    )
+
+    generation_config_params = {}
+    if temperature is not None:
+        generation_config_params["temperature"] = temperature
+    if max_output_tokens is not None:
+        generation_config_params["max_output_tokens"] = max_output_tokens
+    
+    current_generation_config = genai.types.GenerationConfig(**generation_config_params) if generation_config_params else None
+
+    response = model_instance.generate_content(
+        contents=prompt,
+        generation_config=current_generation_config
+    )
+
+    return response.text
