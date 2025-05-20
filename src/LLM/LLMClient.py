@@ -1,9 +1,9 @@
 import google.generativeai as genai
 
 def generate_gemini_response(
-    prompt: str,
     api_key: str,
-    model_name: str = "gemini-1.5-pro-latest",
+    model_name: str,
+    prompt: str,
     system_message: str = None,
     temperature: float = None,
     max_output_tokens: int = None,
@@ -29,14 +29,14 @@ def generate_gemini_response(
         google.api_core.exceptions.GoogleAPIError: For API-related errors during generation.
         Other exceptions from the google.generativeai library may also propagate.
     """
-    if not api_key:
-        raise ValueError("A Google API key must be provided to 'generate_gemini_response'.")
-
     genai.configure(api_key=api_key)
+    if not api_key:
+        raise ValueError(
+            "A Google API key must be provided to 'generate_gemini_response'."
+        )
 
     model_instance = genai.GenerativeModel(
-        model_name=model_name,
-        system_instruction=system_message
+        model_name=model_name, system_instruction=system_message
     )
 
     generation_config_params = {}
@@ -44,8 +44,12 @@ def generate_gemini_response(
         generation_config_params["temperature"] = temperature
     if max_output_tokens is not None:
         generation_config_params["max_output_tokens"] = max_output_tokens
-    
-    current_generation_config = genai.types.GenerationConfig(**generation_config_params) if generation_config_params else None
+
+    current_generation_config = (
+        genai.types.GenerationConfig(**generation_config_params)
+        if generation_config_params
+        else None
+    )
 
     response = model_instance.generate_content(
         contents=prompt,
