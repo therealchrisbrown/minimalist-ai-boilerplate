@@ -1,8 +1,12 @@
 import os
-from LLM.LLMClient import generate_gemini_response
+from dotenv import load_dotenv
+from src.LLM.LLMClient import generate_gemini_response
 from google import genai
-from LLM.prompts.prompts import SYSTEM_PROMPT, USER_PROMPT
-from models.BaseModel import Recipe
+from src.LLM.prompts.prompts import SYSTEM_PROMPT, USER_PROMPT
+from src.models.BaseModel import Recipe
+
+# Load environment variables
+load_dotenv()
 
 
 # ------------------------------------------------------------------------------
